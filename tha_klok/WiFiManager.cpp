@@ -1,49 +1,86 @@
-#include "WifiManager.h"
+#include "WiFiManager.h"
+#include <WiFiS3.h>
+#include <Arduino_FreeRTOS.h>
 
-WifiManager::WifiManager(const char* ssid, const char* password)
-  : _ssid(ssid), _password(password), log("WiFiManager") {}
+WiFiManager::WiFiManager(const char* ssid, const char* password)
+  : ssid(ssid), password(password), log("WiFi ") {}
 
-void WifiManager::connect() {
-  log.info(String("Connecting to ") + _ssid);
-
-  WiFi.begin(_ssid, _password);
-
-  unsigned long start = millis();
-  const unsigned long timeout = 15000;
-
-  while ((WiFi.status() != WL_CONNECTED || WiFi.localIP() == INADDR_NONE) &&
-         millis() - start < timeout) {
-    //Serial.print(".");  // Visual connection progress
-    delay(500);
-  }
-
-  Serial.println();
-
-  if (isConnected()) {
-    log.info("Connected!");
+void WiFiManager::taskLoop() {
+  while (true) {
     printStatus();
+
+    if (!isConnected()) {
+      connect();
+    }
+
+    // Check the connection status every 30 seconds.
+    vTaskDelay(pdMS_TO_TICKS(30000));
+  }
+}
+
+// Returns true only if we have a link connection and a valid IP.
+bool WiFiManager::isConnected() const {
+  return (WiFi.status() == WL_CONNECTED) &&
+         (WiFi.localIP() != IPAddress(0, 0, 0, 0));
+}
+
+// Attempt to establish a WiFi connection, waiting for DHCP if necessary.
+void WiFiManager::connect() {
+  log.info("Attempting WiFi connection...");
+  WiFi.begin(ssid, password);
+
+  // Wait up to 10 seconds for the link-layer connection (WL_CONNECTED).
+  const unsigned long connectTimeout = 10000;
+  unsigned long startAttempt = millis();
+  bool linkConnected = false;
+  
+  while ((millis() - startAttempt) < connectTimeout) {
+    if (WiFi.status() == WL_CONNECTED) {
+      linkConnected = true;
+      break;
+    }
+    log.debug("Waiting for link-layer connection...");
+    vTaskDelay(pdMS_TO_TICKS(250));
+  }
+  
+  if (!linkConnected) {
+    log.error("WiFi connection attempt timed out (link layer).");
+    return;  // Try again next cycle.
+  }
+  
+  // Wait up to another 10 seconds for DHCP to assign a valid IP address.
+  const unsigned long dhcpTimeout = 10000;
+  startAttempt = millis();
+  
+  while ((millis() - startAttempt) < dhcpTimeout) {
+    IPAddress ip = WiFi.localIP();
+    if (ip != IPAddress(0, 0, 0, 0)) {
+      log.info("WiFi connected and DHCP assigned an IP address.");
+      printStatus();
+      return;  // Successful connection.
+    }
+    log.debug("Waiting for DHCP assignment...");
+    vTaskDelay(pdMS_TO_TICKS(250));
+  }
+  
+  // DHCP assignment timed out.
+  log.error("DHCP assignment timed out. Restarting connection...");
+  WiFi.disconnect();
+  vTaskDelay(pdMS_TO_TICKS(500));
+}
+
+// Report the current connection status.
+void WiFiManager::printStatus() {
+  if (WiFi.status() == WL_CONNECTED) {
+    IPAddress ip = WiFi.localIP();
+    if (ip == IPAddress(0, 0, 0, 0)) {
+      log.warn(String("Connected to ") + ssid + ", but no IP assigned!");
+    } else {
+      long rssi = WiFi.RSSI();
+      log.debug(String("Connected to ") + ssid + " (RSSI: " + rssi + " dBm)");
+      log.debug(String("IP address: ") + ip.toString());
+    }
   } else {
-    log.error("Failed to connect.");
+    log.info("WiFi not connected.");
   }
-}
-
-bool WifiManager::isConnected() {
-  return (WiFi.status() == WL_CONNECTED && WiFi.localIP() != INADDR_NONE);
-}
-
-void WifiManager::printStatus() {
-  log.info(String("IP Address: ") + WiFi.localIP().toString());
-
-  uint8_t mac[6];
-  WiFi.macAddress(mac);
-
-  String macStr;
-  for (int i = 0; i < 6; ++i) {
-    if (mac[i] < 16) macStr += "0";
-    macStr += String(mac[i], HEX);
-    if (i < 5) macStr += ":";
-  }
-
-  log.info(String("MAC Address: ") + macStr);
-  log.info(String("Signal strength (RSSI): ") + String(WiFi.RSSI()) + " dBm");
 }

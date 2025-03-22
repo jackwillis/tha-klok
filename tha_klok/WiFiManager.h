@@ -1,21 +1,20 @@
-#ifndef WIFI_MANAGER_H
-#define WIFI_MANAGER_H
+#pragma once
 
-#include <WiFiS3.h>
 #include "Logger.h"
 
-class WifiManager {
-  public:
-    WifiManager(const char* ssid, const char* password);
+class WiFiManager {
+public:
+  WiFiManager(const char* ssid, const char* password);
+  
+  void taskLoop();
+  bool isConnected() const;
 
-    void connect();
-    bool isConnected();
-    void printStatus();
+private:
+  static void taskWrapper(void* instance);
+  void connect();
+  void printStatus();
 
-  private:
-    const char* _ssid;
-    const char* _password;
-    Logger log;
+  const char* ssid;
+  const char* password;
+  Logger log;
 };
-
-#endif

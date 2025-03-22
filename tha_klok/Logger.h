@@ -1,5 +1,4 @@
-#ifndef LOGGER_H
-#define LOGGER_H
+#pragma once
 
 #include <Arduino.h>
 #include <Arduino_FreeRTOS.h>
@@ -19,5 +18,3 @@ private:
 
   static SemaphoreHandle_t logSemaphore;
 };
-
-#endif

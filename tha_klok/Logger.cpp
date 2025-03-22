@@ -17,11 +17,11 @@ void Logger::debug(const String& msg) {
 }
 
 void Logger::info(const String& msg) {
-  log(" INFO", msg);
+  log("INFO ", msg);
 }
 
 void Logger::warn(const String& msg) {
-  log(" WARN", msg);
+  log("WARN ", msg);
 }
 
 void Logger::error(const String& msg) {
@@ -29,15 +29,28 @@ void Logger::error(const String& msg) {
 }
 
 void Logger::log(const char* level, const String& msg) {
-  if (!logSemaphore || xSemaphoreTake(logSemaphore, portMAX_DELAY) != pdTRUE) {
+  if (!logSemaphore) {
+    return;
+  }
+  
+  // Wait for semaphore to be available
+  if (xSemaphoreTake(logSemaphore, portMAX_DELAY) != pdTRUE) {
     return;
   }
 
+  // Format number of seconds since the device has been on
+  char timestamp[16];
+  float seconds = millis() / 1000.0;
+  snprintf(timestamp, sizeof(timestamp), "%10.3f", seconds);
+  
+  Serial.print(timestamp);
+  Serial.print(' ');
   Serial.print(level);
-  Serial.print(" [");
+  Serial.print(' ');
   Serial.print(_tag);
-  Serial.print("] ");
+  Serial.print(" : ");
   Serial.println(msg);
   
+  // Return the semaphore
   xSemaphoreGive(logSemaphore);
 }
