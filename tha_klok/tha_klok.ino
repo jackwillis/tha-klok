@@ -20,7 +20,23 @@ MatrixService matrixService;
 WiFiService   wifiService(WIFI_CREDENTIALS_SSID, WIFI_CREDENTIALS_PASSWORD);
 NTPService    ntpService;
 
-ArduinoLEDMatrix matrix;
+void setup() {
+  Serial.begin(115200);
+  Serial.println("\n\n\nStarting tha klok...\n");
+
+  RTCManager::begin();
+
+  xTaskCreate(clockTask,  "Clock",  256, nullptr, 2, nullptr);
+  xTaskCreate(matrixTask, "Matrix", 256, nullptr, 2, nullptr);
+  xTaskCreate(wifiTask,   "WiFi",   256, nullptr, 1, nullptr);
+  xTaskCreate(ntpTask,    "NTP",    256, nullptr, 1, nullptr);
+
+  vTaskStartScheduler();  // Starts FreeRTOS
+}
+
+void loop() {
+  // FreeRTOS handles everything
+}
 
 void clockTask(void* pvParameters) {
   clockService.taskLoop();
@@ -40,22 +56,4 @@ void wifiTask(void* pvParameters) {
 void ntpTask(void* pvParameters) {
   ntpService.taskLoop();
   vTaskDelete(nullptr);
-}
-
-void setup() {
-  Serial.begin(115200);
-  Serial.println("\n\n\nStarting tha klok...\n");
-
-  RTCManager::begin();
-
-  xTaskCreate(clockTask,  "Clock",  256, nullptr, 2, nullptr);
-  xTaskCreate(matrixTask, "Matrix", 256, nullptr, 2, nullptr);
-  xTaskCreate(wifiTask,   "WiFi",   256, nullptr, 1, nullptr);
-  xTaskCreate(ntpTask,    "NTP",    256, nullptr, 1, nullptr);
-
-  vTaskStartScheduler();  // Starts FreeRTOS
-}
-
-void loop() {
-  // FreeRTOS handles everything
 }
