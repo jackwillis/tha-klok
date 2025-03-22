@@ -1,14 +1,14 @@
-#include "NTPManager.h"
+#include "NTPService.h"
 #include <Arduino_FreeRTOS.h>
 
-NTPManager::NTPManager(WiFiManager* wifiManager)
-  : wifi(wifiManager), firstSyncComplete(false), log("NTP  ") {}
+NTPService::NTPService(WiFiService* wifiService)
+  : wifiService(wifiService), firstSyncComplete(false), log("NTP  ") {}
 
 // The main task loop for NTP sync
-void NTPManager::taskLoop() {
+void NTPService::taskLoop() {
   while (true) {
     // If WiFi is not connected, wait 5 seconds before rechecking.
-    if (!wifi->isConnected()) {
+    if (!wifiService->isConnected()) {
       log.info("Waiting for WiFi...");
       vTaskDelay(pdMS_TO_TICKS(5000));
       continue;
@@ -36,7 +36,7 @@ void NTPManager::taskLoop() {
 }
 
 // Simulate an NTP sync (production code would perform actual NTP network calls)
-bool NTPManager::syncNow() {
+bool NTPService::syncNow() {
   log.info("Pretending to sync NTP...");
   delay(100);  // Simulated network delay
   return true; // Simulate success

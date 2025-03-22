@@ -1,9 +1,9 @@
 #include <Arduino_FreeRTOS.h>
 #include <WiFiS3.h>
 
-#include "ClockManager.h"
-#include "NTPManager.h"
-#include "WiFiManager.h"
+#include "ClockService.h"
+#include "NTPService.h"
+#include "WiFiService.h"
 
 #include "wifi_credentials.h"
 #ifndef WIFI_CREDENTIALS_SSID
@@ -13,22 +13,22 @@
   #error "WIFI_CREDENTIALS_PASSWORD was not defined in wifi_credentials.h"
 #endif
 
-ClockManager  clockManager;
-WiFiManager   wifiManager(WIFI_CREDENTIALS_SSID, WIFI_CREDENTIALS_PASSWORD);
-NTPManager    ntpManager(&wifiManager);
+ClockService  clockService;
+WiFiService   wifiService(WIFI_CREDENTIALS_SSID, WIFI_CREDENTIALS_PASSWORD);
+NTPService    ntpService(&wifiService);
 
 void clockTask(void* pvParameters) {
-  clockManager.taskLoop();
+  clockService.taskLoop();
   vTaskDelete(NULL);
 }
 
 void wifiTask(void* pvParameters) {
-  wifiManager.taskLoop();
+  wifiService.taskLoop();
   vTaskDelete(NULL);
 }
 
 void ntpTask(void* pvParameters) {
-  ntpManager.taskLoop();
+  ntpService.taskLoop();
   vTaskDelete(NULL);
 }
 

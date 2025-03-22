@@ -2,15 +2,14 @@
 
 #include "Logger.h"
 
-class WiFiManager {
+class WiFiService {
 public:
-  WiFiManager(const char* ssid, const char* password);
+  WiFiService(const char* ssid, const char* password);
   
   void taskLoop();
   bool isConnected() const;
 
 private:
-  static void taskWrapper(void* instance);
   void connect();
   void printStatus();
 

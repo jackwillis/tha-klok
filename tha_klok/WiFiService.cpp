@@ -1,11 +1,11 @@
-#include "WiFiManager.h"
+#include "WiFiService.h"
 #include <WiFiS3.h>
 #include <Arduino_FreeRTOS.h>
 
-WiFiManager::WiFiManager(const char* ssid, const char* password)
+WiFiService::WiFiService(const char* ssid, const char* password)
   : ssid(ssid), password(password), log("WiFi ") {}
 
-void WiFiManager::taskLoop() {
+void WiFiService::taskLoop() {
   while (true) {
     printStatus();
 
@@ -19,13 +19,13 @@ void WiFiManager::taskLoop() {
 }
 
 // Returns true only if we have a link connection and a valid IP.
-bool WiFiManager::isConnected() const {
+bool WiFiService::isConnected() const {
   return (WiFi.status() == WL_CONNECTED) &&
          (WiFi.localIP() != IPAddress(0, 0, 0, 0));
 }
 
 // Attempt to establish a WiFi connection, waiting for DHCP if necessary.
-void WiFiManager::connect() {
+void WiFiService::connect() {
   log.info("Attempting WiFi connection...");
   WiFi.begin(ssid, password);
 
@@ -70,7 +70,7 @@ void WiFiManager::connect() {
 }
 
 // Report the current connection status.
-void WiFiManager::printStatus() {
+void WiFiService::printStatus() {
   if (WiFi.status() == WL_CONNECTED) {
     IPAddress ip = WiFi.localIP();
     if (ip == IPAddress(0, 0, 0, 0)) {

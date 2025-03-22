@@ -1,10 +1,10 @@
-#include "ClockManager.h"
+#include "ClockService.h"
 #include <Arduino_FreeRTOS.h>
 
-ClockManager::ClockManager()
+ClockService::ClockService()
   : log("Clock") {}
 
-void ClockManager::taskLoop() {
+void ClockService::taskLoop() {
   while (true) {
     log.debug("Tick.");
     vTaskDelay(pdMS_TO_TICKS(1000));

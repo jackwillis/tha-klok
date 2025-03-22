@@ -1,18 +1,18 @@
 #pragma once
 
 #include "Logger.h"
-#include "WiFiManager.h"
+#include "WiFiService.h"
 
-class NTPManager {
+class NTPService {
 public:
-  NTPManager(WiFiManager* wifiManager);
+  NTPService(WiFiService* wifiService);
   
   void taskLoop();
 
 private:
   bool syncNow();
 
-  WiFiManager* wifi;
+  WiFiService* wifiService;
   bool firstSyncComplete;
   Logger log;
 };

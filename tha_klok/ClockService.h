@@ -1,9 +1,9 @@
 #pragma once
 #include "Logger.h"
 
-class ClockManager {
+class ClockService {
 public:
-  ClockManager();
+  ClockService();
 
   void taskLoop();
 
