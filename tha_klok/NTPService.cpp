@@ -1,43 +1,72 @@
 #include "NTPService.h"
+#include "RTCManager.h"
+
 #include <Arduino_FreeRTOS.h>
+#include <NTPClient.h>
+#include <WiFiUdp.h>
 
-NTPService::NTPService(WiFiService* wifiService)
-  : wifiService(wifiService), firstSyncComplete(false), log("NTP  ") {}
+WiFiUDP udp;
+NTPClient ntp(udp, "pool.ntp.org", 0, 60000);  // No offset, refresh every 60s
 
-// The main task loop for NTP sync
+NTPService::NTPService()
+  : firstSyncComplete(false), log("NTP") {}
+
 void NTPService::taskLoop() {
   while (true) {
-    // If WiFi is not connected, wait 5 seconds before rechecking.
-    if (!wifiService->isConnected()) {
+    if (!WiFiService::isConnected()) {
       log.info("Waiting for WiFi...");
       vTaskDelay(pdMS_TO_TICKS(5000));
       continue;
     }
 
-    // First sync attempt.
     if (!firstSyncComplete) {
       log.info("Trying initial NTP sync...");
-      bool success = syncNow();
-      if (success) {
+      if (syncNow()) {
         log.info("Initial sync complete!");
         firstSyncComplete = true;
+        vTaskDelay(pdMS_TO_TICKS(3600000));  // Wait an hour
       } else {
         log.error("Initial sync failed. Retrying...");
         vTaskDelay(pdMS_TO_TICKS(10000));
       }
-    }
-    // Subsequent hourly syncs.
-    else {
+    } else {
       log.info("Hourly NTP sync...");
       syncNow();  // Not critical if it fails
-      vTaskDelay(pdMS_TO_TICKS(3600000));  // One hour delay
+      vTaskDelay(pdMS_TO_TICKS(3600000));  // Every hour
     }
   }
 }
 
-// Simulate an NTP sync (production code would perform actual NTP network calls)
 bool NTPService::syncNow() {
-  log.info("Pretending to sync NTP...");
-  delay(100);  // Simulated network delay
-  return true; // Simulate success
+  log.debug("Starting NTP sync...");
+
+  ntp.begin();
+
+  if (!ntp.forceUpdate()) {
+    log.error("NTP update failed.");
+    return false;
+  }
+
+  // Success!
+
+  unsigned long epoch = ntp.getEpochTime();
+  RTCManager::setTimeUTC(epoch);
+  RTCManager::setLastNTPSync(epoch);
+
+  char timestamp[36];
+  tmElements_t tm;
+  breakTime(epoch, tm);
+  snprintf(timestamp, sizeof(timestamp),
+           "%04d-%02d-%02d %2d:%02d:%02d UTC",
+           tmYearToCalendar(tm.Year),
+           tm.Month,
+           tm.Day,
+           tm.Hour,
+           tm.Minute,
+           tm.Second);
+
+  log.debug(String("NTP time: ") + epoch);
+  log.info(String("NTP time: ") + timestamp);
+
+  return true;
 }

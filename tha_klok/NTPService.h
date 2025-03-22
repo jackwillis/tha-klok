@@ -1,18 +1,17 @@
 #pragma once
 
-#include "Logger.h"
 #include "WiFiService.h"
+#include "Logger.h"
 
 class NTPService {
 public:
-  NTPService(WiFiService* wifiService);
-  
+  NTPService();
+
   void taskLoop();
 
 private:
-  bool syncNow();
-
-  WiFiService* wifiService;
   bool firstSyncComplete;
   Logger log;
+
+  bool syncNow();
 };

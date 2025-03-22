@@ -2,7 +2,9 @@
 #include <WiFiS3.h>
 
 #include "ClockService.h"
+#include "MatrixService.h"
 #include "NTPService.h"
+#include "RTCManager.h"
 #include "WiFiService.h"
 
 #include "wifi_credentials.h"
@@ -14,33 +16,42 @@
 #endif
 
 ClockService  clockService;
+MatrixService matrixService;
 WiFiService   wifiService(WIFI_CREDENTIALS_SSID, WIFI_CREDENTIALS_PASSWORD);
-NTPService    ntpService(&wifiService);
+NTPService    ntpService;
+
+ArduinoLEDMatrix matrix;
 
 void clockTask(void* pvParameters) {
   clockService.taskLoop();
-  vTaskDelete(NULL);
+  vTaskDelete(nullptr);
+}
+
+void matrixTask(void* pvParameters) {
+  matrixService.taskLoop();
+  vTaskDelete(nullptr);
 }
 
 void wifiTask(void* pvParameters) {
   wifiService.taskLoop();
-  vTaskDelete(NULL);
+  vTaskDelete(nullptr);
 }
 
 void ntpTask(void* pvParameters) {
   ntpService.taskLoop();
-  vTaskDelete(NULL);
+  vTaskDelete(nullptr);
 }
 
 void setup() {
   Serial.begin(115200);
-
   Serial.println("\n\n\nStarting tha klok...\n");
-  delay(1000);  // Wait for the Serial Monitor to connect
 
-  xTaskCreate(wifiTask,   "WiFiTask",   512,  NULL, 2, NULL);
-  xTaskCreate(ntpTask,    "NTPTask",    512,  NULL, 2, NULL);
-  xTaskCreate(clockTask,  "ClockTask",  256,  NULL, 1, NULL);
+  RTCManager::begin();
+
+  xTaskCreate(clockTask,  "Clock",  256, nullptr, 2, nullptr);
+  xTaskCreate(matrixTask, "Matrix", 256, nullptr, 2, nullptr);
+  xTaskCreate(wifiTask,   "WiFi",   256, nullptr, 1, nullptr);
+  xTaskCreate(ntpTask,    "NTP",    256, nullptr, 1, nullptr);
 
   vTaskStartScheduler();  // Starts FreeRTOS
 }

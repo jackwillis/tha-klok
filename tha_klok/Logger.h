@@ -13,8 +13,9 @@ public:
   void error(const String& msg);
 
 private:
-  const char* _tag;
-  void log(const char* level, const String& msg);
-
   static SemaphoreHandle_t logSemaphore;
+
+  const char* tag;
+
+  void log(const char* level, const String& msg);
 };

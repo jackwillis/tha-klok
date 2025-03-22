@@ -3,7 +3,7 @@
 SemaphoreHandle_t Logger::logSemaphore = nullptr;
 
 Logger::Logger(const char* tag)
-  : _tag(tag) {
+  : tag(tag) {
   if (!logSemaphore) {
     logSemaphore = xSemaphoreCreateBinary();  // 🔑 Create the binary semaphore
     if (logSemaphore) {
@@ -47,8 +47,12 @@ void Logger::log(const char* level, const String& msg) {
   Serial.print(' ');
   Serial.print(level);
   Serial.print(' ');
-  Serial.print(_tag);
-  Serial.print(" : ");
+
+  char tagBuf[7];
+  snprintf(tagBuf, sizeof(tagBuf), "%6s", tag);
+  Serial.print(tagBuf);
+
+  Serial.print(" | ");
   Serial.println(msg);
   
   // Return the semaphore

@@ -2,8 +2,10 @@
 #include <WiFiS3.h>
 #include <Arduino_FreeRTOS.h>
 
+bool hasAttemptedConnection = false;
+
 WiFiService::WiFiService(const char* ssid, const char* password)
-  : ssid(ssid), password(password), log("WiFi ") {}
+  : ssid(ssid), password(password), log("WiFi") {}
 
 void WiFiService::taskLoop() {
   while (true) {
@@ -19,15 +21,19 @@ void WiFiService::taskLoop() {
 }
 
 // Returns true only if we have a link connection and a valid IP.
-bool WiFiService::isConnected() const {
-  return (WiFi.status() == WL_CONNECTED) &&
+bool WiFiService::isConnected() {
+  return hasAttemptedConnection &&
+         (WiFi.status() == WL_CONNECTED) &&
          (WiFi.localIP() != IPAddress(0, 0, 0, 0));
 }
 
 // Attempt to establish a WiFi connection, waiting for DHCP if necessary.
 void WiFiService::connect() {
   log.info("Attempting WiFi connection...");
+  WiFi.disconnect();
   WiFi.begin(ssid, password);
+
+  hasAttemptedConnection = true;
 
   // Wait up to 10 seconds for the link-layer connection (WL_CONNECTED).
   const unsigned long connectTimeout = 10000;
@@ -45,6 +51,7 @@ void WiFiService::connect() {
   
   if (!linkConnected) {
     log.error("WiFi connection attempt timed out (link layer).");
+    WiFi.disconnect();
     return;  // Try again next cycle.
   }
   

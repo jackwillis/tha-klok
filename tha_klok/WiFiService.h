@@ -6,8 +6,9 @@ class WiFiService {
 public:
   WiFiService(const char* ssid, const char* password);
   
+  static bool isConnected();
+
   void taskLoop();
-  bool isConnected() const;
 
 private:
   void connect();
